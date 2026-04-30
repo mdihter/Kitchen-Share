@@ -4,19 +4,11 @@ import pb from "@/app/lib/pb"
 import { useParams, useRouter } from 'next/navigation';
 import PillButton from "@/app/components/PillButton"
 import InputField from "@/app/components/InputField"
+import EditListingModal from '@/app/components/EditListingModal';
 import { useStartConversation } from "../../hooks";
 import { useCurrentUser } from "@/app/hooks/useCurrentUser";
-import { hasBlocked, isBlockedBy } from "@/app/lib/blockUtils";
-
-type Listing = {
-    title: string;
-    description: string;
-    seller: string;
-    price: number;
-    location: string;
-    main_image: string;
-    images?: string[];
-};
+import { isBlockedBy } from "@/app/lib/blockUtils";
+import type { Listing } from '@/app/types/listing';
 
 type Seller = {
     displayName: string;
@@ -39,6 +31,7 @@ export default function ItemPage() {
     const [offerAmount, setOfferAmount] = useState('');
     const [offerError, setOfferError] = useState<string | undefined>(undefined);
     const [isBlocked, setIsBlocked] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
     const { startConversation, loading: messagingLoading } = useStartConversation(seller?.id || '');
 
     const renderStars = (rating: number) => {
@@ -53,14 +46,15 @@ export default function ItemPage() {
         return stars;
     };
 
+    const fetchListing = async () => {
+        const data = await pb.collection("listings").getOne<Listing>(id);
+        setListing(data);
+        const data2 = await pb.collection("users").getOne<Seller>(data.seller);
+        setSeller(data2);
+    };
+
     useEffect(() => {
-        const fetchData = async () => {
-            const data = await pb.collection("listings").getOne<Listing>(id);
-            setListing(data);
-            const data2 = await pb.collection("users").getOne<Seller>(data.seller);
-            setSeller(data2);
-        };
-        fetchData();
+        fetchListing();
     }, [id]);
 
     // Show "unavailable" page if the listing seller has blocked current user
@@ -115,9 +109,8 @@ export default function ItemPage() {
     if (!seller) return <div>Loading...</div>;
     //check if logged in user is the owner of the listing
     const isOwner = listing.seller === currentUserId;
-    //temporary edit listing handler
     const handleEditListing = () => {
-        console.log("Edit listing clicked");
+        setIsEditing(true);
     };
 
 
@@ -183,9 +176,9 @@ export default function ItemPage() {
                             {/* check if current user is the owner of the listing */}
                             {isOwner ? (
                                 <PillButton
-                                type="button"
-                                onClick={handleEditListing}
-                                className="w-full"
+                                    type="button"
+                                    onClick={handleEditListing}
+                                    className="w-full"
                                 >
                                     Edit Listing
                                 </PillButton>
@@ -217,6 +210,17 @@ export default function ItemPage() {
                     </div>
                 </div>
             </div>
+
+            {isEditing && listing && (
+                <EditListingModal
+                    listing={listing}
+                    onClose={() => setIsEditing(false)}
+                    onSaved={() => {
+                        setIsEditing(false);
+                        fetchListing();
+                    }}
+                />
+            )}
 
             {/* Make Offer Modal */}
             {showOfferModal && (
