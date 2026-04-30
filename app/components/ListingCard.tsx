@@ -77,14 +77,9 @@ export function ListingCard({ listing, favoriteIds, onUnfavorite }: { listing: L
         }
     };
 
-    const handleClick = (e) => {
-        e.preventDefault();
-        openListing(listing.id);
-    }
-
     return (
         <li className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-            <Link href={`/listing/${listing.id}`} onClick={handleClick} className="block">
+            <button onClick={() => openListing(listing.id)} className="block">
                 <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
                     <img
                         src={imgUrl}
@@ -155,7 +150,7 @@ export function ListingCard({ listing, favoriteIds, onUnfavorite }: { listing: L
                         )}
                     </div>
                 </div>
-            </Link>
+            </button>
         </li>
     );
 }
