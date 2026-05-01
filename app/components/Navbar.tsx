@@ -6,7 +6,7 @@ import Link from "next/link";
 import pb from "../lib/pb";
 import { useCurrentUser } from "../hooks";
 import SearchBar from "@/app/components/SearchBar";
-import {ChevronDown, User, LogOut, Heart, Map, Info, Plus, MessageCircle} from "lucide-react";
+import {ChevronDown, User, LogOut, Heart, Map, Info, Plus, MessageCircle, LayoutList} from "lucide-react";
 import PillButton from "@/app/components/PillButton";
 import {setAuthRedirect} from "@/app/api/authRedirect";
 import IconButton from "@/app/components/IconButton";
@@ -29,6 +29,12 @@ export default function Navbar() {
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const [searchOpen, setSearchOpen] = useState(false);
+
+    const handleLoginRequired = (e: any) => {
+        if (currentUserId) return;
+        e.preventDefault();
+        setIsOnLogin(true);
+    }
 
     const handleLogout = () => {
         try {
@@ -115,22 +121,8 @@ export default function Navbar() {
                         <IconButton href="/about" label={"About"}>
                             <Info className={"text-stone-600"} />
                         </IconButton>
-                        <IconButton href="/map" label={"Map"}>
-                            <Map className={"text-stone-600"}/>
-                        </IconButton>
-                        {currentUserId &&
-                            <IconButton href="/favorites" label={"Favorites"}>
-                                <Heart className={"text-red-400"} />
-                            </IconButton>
-                        }
                         {currentUserId ? (
                             <>
-                                <IconButton href={`/createlisting`} label={"Create Listing"}>
-                                    <Plus className={"text-stone-600"} />
-                                </IconButton>
-                                <IconButton href={`/messages`} label={"Messages"}>
-                                    <MessageCircle className={"text-stone-600"} />
-                                </IconButton>
                                 <div className="relative" ref={menuRef}>
                                     <button
                                         type="button"
@@ -211,22 +203,20 @@ export default function Navbar() {
                         <IconButton href="/about" label={"About"}>
                             <Info className={"text-stone-600"} />
                         </IconButton>
-                        <IconButton href="/map" label={"Map"}>
-                            <Map className={"text-stone-600"}/>
+                        <IconButton href="/mylistings" label={"My Listings"} onClick={e => handleLoginRequired(e)}>
+                            <LayoutList className={"text-stone-600"}/>
                         </IconButton>
-                        {currentUserId &&
-                            <IconButton href="/favorites" label={"Favorites"}>
-                                <Heart className={"text-red-400"} />
-                            </IconButton>
-                        }
+                        <IconButton href={`/createlisting`} label={"Create Listing"} onClick={e => handleLoginRequired(e)}>
+                            <Plus className={"text-stone-600"} />
+                        </IconButton>
+                        <IconButton href="/favorites" label={"Favorites"} onClick={e => handleLoginRequired(e)}>
+                            <Heart className={"text-red-400"} />
+                        </IconButton>
+                        <IconButton href={`/messages`} label={"Messages"} onClick={e => handleLoginRequired(e)}>
+                            <MessageCircle className={"text-stone-600"} />
+                        </IconButton>
                         {currentUserId ? (
                             <>
-                                <IconButton href={`/createlisting`} label={"Create Listing"}>
-                                    <Plus className={"text-stone-600"} />
-                                </IconButton>
-                                <IconButton href={`/messages`} label={"Messages"}>
-                                    <MessageCircle className={"text-stone-600"} />
-                                </IconButton>
                                 <div className="relative" ref={menuRef}>
                                     {menuOpen && (
                                     <div className="absolute right-0 bottom-18 w-56 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-xl">
@@ -286,13 +276,9 @@ export default function Navbar() {
                                 </div>
                             </>
                         ) : (
-                            <>
-                                <Link onClick={setAuthRedirect} href={`/auth`}>
-                                    <PillButton>
-                                        Log in
-                                    </PillButton>
-                                </Link>
-                            </>
+                            <PillButton onClick={()=> setIsOnLogin(true)}>
+                                Log in
+                            </PillButton>
                         )}
                     </div>
                 </nav>
