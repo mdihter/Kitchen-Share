@@ -79,8 +79,8 @@ export function ListingCard({ listing, favoriteIds, onUnfavorite }: { listing: L
 
     return (
         <li className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-            <button onClick={() => openListing(listing.id)} className="block">
-                <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
+            <div onClick={() => openListing(listing.id)} className="block">
+                <div className="relative aspect-4/3 overflow-hidden bg-stone-100">
                     <img
                         src={imgUrl}
                         alt={listing.title}
@@ -150,7 +150,7 @@ export function ListingCard({ listing, favoriteIds, onUnfavorite }: { listing: L
                         )}
                     </div>
                 </div>
-            </button>
+            </div>
         </li>
     );
 }
