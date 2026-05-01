@@ -72,8 +72,8 @@ export default function EditListingModal({ listing, onClose, onSaved }: EditList
     'w-full px-3 py-2.5 text-sm border border-stone-200 rounded-xl focus:outline-none focus:border-stone-900 transition-colors bg-white';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[90vh]">
+    <div onClick={onClose} className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4">
+      <div onClick={e => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-stone-100">
           <h2 className="text-lg font-bold text-stone-900">Edit Listing</h2>
@@ -141,7 +141,7 @@ export default function EditListingModal({ listing, onClose, onSaved }: EditList
               className={inputClass}
               value={form.tags}
               onChange={handleChange('tags')}
-              placeholder="Separate with spaces"
+              placeholder="Separate with commas"
             />
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
