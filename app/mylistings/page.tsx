@@ -38,6 +38,7 @@ function ConfirmSaleModal({
     const [buyers, setBuyers] = useState<Buyer[]>([]);
     const [loading, setLoading] = useState(true);
     const [confirming, setConfirming] = useState(false);
+    const [cancelling, setCancelling] = useState(false);
     const [selectedBuyer, setSelectedBuyer] = useState<Buyer | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -45,7 +46,7 @@ function ConfirmSaleModal({
         const fetchBuyers = async () => {
             try {
                 const conversations = await pb.collection('conversations').getFullList({
-                    filter: `listing = "${listing.id}" && saleConfirmed = false`,
+                    filter: `listing = "${listing.id}" && saleConfirmed = false && saleCancelled = false`,
                     expand: 'buyer',
                 });
 
@@ -75,19 +76,36 @@ function ConfirmSaleModal({
         fetchBuyers();
     }, [listing.id]);
 
+    const handleCancel = async () => {
+        if (!selectedBuyer) return;
+        setCancelling(true);
+        try {
+
+            // Update the conversation with a confirmed message
+            await pb.collection('conversations').update(selectedBuyer.conversationId, {
+                saleCancelled: true,
+                buyer_archived: true,
+            });
+
+            onSold();
+            onClose();
+        } catch (e) {
+            console.error(e);
+            setError('Failed to cancel sale. Please try again.');
+        } finally {
+            setCancelling(false);
+        }
+    };
+
     const handleConfirm = async () => {
         if (!selectedBuyer) return;
         setConfirming(true);
         try {
 
-            await pb.collection('listings').update(listing.id, {
-                buyer: selectedBuyer.id,
-            });
-
             // Update the conversation with a confirmed message
             await pb.collection('conversations').update(selectedBuyer.conversationId, {
-                last_message: 'Seller has confirmed the purchase.',
                 saleConfirmed: true,
+                buyer_archived: true,
             });
 
             // Increment seller's successfulListings
@@ -98,7 +116,8 @@ function ConfirmSaleModal({
 
             onSold();
             onClose();
-        } catch {
+        } catch (e) {
+            console.error(e);
             setError('Failed to confirm sale. Please try again.');
         } finally {
             setConfirming(false);
@@ -111,7 +130,7 @@ function ConfirmSaleModal({
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-5 border-b border-stone-100">
                     <div>
-                        <h2 className="text-lg font-bold text-stone-900">Confirm Sale</h2>
+                        <h2 className="text-lg font-bold text-stone-900">Finalize Sale</h2>
                         <p className="text-sm text-stone-400 mt-0.5">{listing.title}</p>
                     </div>
                     <button onClick={onClose} className="text-stone-400 hover:text-stone-700 transition-colors">
@@ -177,14 +196,15 @@ function ConfirmSaleModal({
                 {/* Footer */}
                 <div className="px-6 py-4 border-t border-stone-100 flex gap-3">
                     <button
-                        onClick={onClose}
-                        className="flex-1 py-2.5 text-sm font-semibold text-stone-600 border border-stone-200 rounded-full hover:bg-stone-50 transition-colors"
+                        onClick={handleCancel}
+                        disabled={!selectedBuyer || cancelling || confirming}
+                        className="flex-1 py-2.5 text-sm font-semibold text-stone-600 border border-stone-200 rounded-full hover:bg-stone-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                        Cancel
+                        {cancelling ? 'Cancelling...' : 'Cancel Sale'}
                     </button>
                     <button
                         onClick={handleConfirm}
-                        disabled={!selectedBuyer || confirming}
+                        disabled={!selectedBuyer || confirming || cancelling}
                         className="flex-1 py-2.5 text-sm font-semibold text-white bg-stone-900 rounded-full hover:bg-stone-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                         {confirming ? 'Confirming...' : 'Confirm Sale'}
@@ -346,7 +366,7 @@ export default function MyListingsPage() {
                                     onClick={() => setConfirmSaleListing(listing)}
                                     className="w-full"
                                 >
-                                    Confirm Sale
+                                    Finalize Sale
                                 </PillButton>
                                 <div className="flex gap-2">
                                     <PillButton
