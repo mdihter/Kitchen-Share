@@ -198,6 +198,7 @@ export default function ModalListing() {
     };
 
     const pathname = usePathname();
+    const hideBuyButtons = pathname.includes("messages/");
 
     useEffect(() => {
         if (open) closeListing();
@@ -391,6 +392,7 @@ export default function ModalListing() {
                                 </div>
 
                                 <div className="grid grid-cols-1 gap-4 pt-1 sm:grid-cols-2">
+                                    {!hideBuyButtons && <>
                                     <button
                                         onClick={() => handleBuy()}
                                         disabled={messagingLoading}
@@ -409,6 +411,7 @@ export default function ModalListing() {
                                         <MessageCircleMore className="h-5 w-5" />
                                         Make Offer
                                     </button>
+                                        </>}
                                     <button
                                         onClick={handleShare}
                                         type="button"
