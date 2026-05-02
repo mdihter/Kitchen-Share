@@ -8,6 +8,7 @@ import ModalLogin from "@/app/components/ModalLogin";
 import Sidebar from "@/app/components/Sidebar";
 import {ListingProvider} from "@/app/providers/ListingProvider";
 import ModalListing from "@/app/components/ModalListing";
+import AppShell from "@/app/components/AppShell";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,16 +38,8 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
       <LoginProvider>
         <ListingProvider>
-        <div className="flex flex-row">
-            <Sidebar/>
-          <div className={"relative mx-auto w-full"}>
-            <Navbar/>
-            <ModalLogin/>
-            <ModalListing/>
-            {children}
-          </div>
+          <AppShell>{children}</AppShell>
           <ToastContainer position="bottom-center" autoClose={2500} />
-        </div>
         </ListingProvider>
       </LoginProvider>
       </body>

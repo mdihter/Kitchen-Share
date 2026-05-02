@@ -67,24 +67,24 @@ export default function SearchBar() {
         <div className="relative w-full max-w-xl">
             <Form action="/search" className="w-full">
                 <div
-                    className={`flex items-center rounded-full border bg-white/95 px-4 py-2 shadow-sm transition-all duration-200 ${
+                    className={`flex items-center rounded-2xl border border-foreground/20 bg-background/95 px-4 py-3 shadow-sm shadow-foreground/10 transition-all duration-200 ${
                         isFocused
                             ? "border-amber-500 ring-4 ring-amber-100 shadow-md"
                             : "border-stone-200 hover:border-stone-300"
                     }`}
                 >
-                    <Search className="mr-3 h-4 w-4 text-stone-400" />
+                    <Search className="mr-3 h-7 w-7 text-stone-800" />
 
                     <input
                         ref={inputRef}
                         name="query"
                         type="text"
                         value={liveInput}
-                        placeholder="Search restaurants, dishes, or neighborhoods"
+                        placeholder="Search food, neighbors, or neighborhoods"
                         onChange={handleChange}
                         onFocus={() => setIsFocused(true)}
                         onBlur={() => setTimeout(() => setIsFocused(false), 200)}
-                        className="w-full bg-transparent text-sm text-stone-800 placeholder:text-stone-400 outline-none md:text-[15px]"
+                        className="w-full bg-transparent text-sm text-stone-800 placeholder:text-stone-500 outline-none md:text-[15px]"
                     />
                 </div>
             </Form>
