@@ -36,7 +36,7 @@ export async function getListingStats(listingId: string | undefined) {
         ratingSum: 0
     };
     try {
-        const stats = await pb.collection('stats').getOne(listingId);
+        const stats = await pb.collection('stats_listings').getOne(listingId);
 
         return {
             salesCount: typeof(stats.salesCount) === 'number' ? stats.salesCount : 0,
