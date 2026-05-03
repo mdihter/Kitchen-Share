@@ -221,11 +221,11 @@ export function ProfileView({ profileUser, formData }: { profileUser: pbuser | n
 }
 
 export function ProfileStats({ profileUser }: { profileUser: pbuser | null | undefined }) {
-    const [ratings, setRatings] = useState({averageRating: 0, totalRatings: 0,});
+    const [stats, setStats] = useState({averageRating: 0, totalRatings: 0, totalSold: 0});
     
     useEffect(() => {
         const ratings = async () => {
-            setRatings(await getUserRatings(profileUser?.id));
+            setStats(await getUserRatings(profileUser?.id));
         }
         ratings();
     }, []);
@@ -234,13 +234,13 @@ export function ProfileStats({ profileUser }: { profileUser: pbuser | null | und
         <div className="mt-5 flex flex-wrap items-center justify-center gap-4 text-sm font-medium text-stone-500 lg:justify-start">
             <span className="inline-flex items-center gap-2">
                 <ShoppingBag className="h-5 w-5 text-stone-500" />
-                <span className="font-semibold text-stone-700">{profileUser?.successfulListings ?? 0} sold</span>
+                <span className="font-semibold text-stone-700">{stats.totalSold ?? 0} sold</span>
             </span>
             <span className="hidden h-7 w-px bg-stone-200 sm:block" />
             <span className="inline-flex items-center gap-2">
                 <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <span className="font-semibold text-stone-800">{ratings.averageRating ?? 0}</span>
-                <span className="text-stone-400">({ratings.totalRatings ?? 0} review{ratings.totalRatings != 1 && "s"})</span>
+                <span className="font-semibold text-stone-800">{stats.averageRating ?? 0}</span>
+                <span className="text-stone-400">({stats.totalRatings ?? 0} review{stats.totalRatings != 1 && "s"})</span>
             </span>
         </div>
     );
