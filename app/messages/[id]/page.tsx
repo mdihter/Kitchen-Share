@@ -231,7 +231,7 @@ export default function ConversationPage() {
        setFinalizationError('');
 
        try{
-           const conversationOnline = await pb.collection('conversations').getOne(conversation?.id);
+           const conversationOnline = await pb.collection('conversations').getOne(conversation?.id ? conversation.id : conversationId);
            // Archive convo
            await pb.collection('conversations').update(conversationId, {
                buyer_archived: (conversationOnline?.buyer_archived || isBuyer),
@@ -257,7 +257,7 @@ export default function ConversationPage() {
         setFinalizationError('');
 
         try{
-            const conversationOnline = await pb.collection('conversations').getOne(conversation?.id);
+            const conversationOnline = await pb.collection('conversations').getOne(conversation?.id ? conversation.id : conversationId);
 
             const buyerConfirmed = conversationOnline?.buyer_confirmed || isBuyer;
             const sellerConfirmed = conversationOnline?.seller_confirmed || !isBuyer;
@@ -632,7 +632,7 @@ export default function ConversationPage() {
                             {saleStatus === 'confirmed' && !isArchived
                                 ? 'Sale confirmed — rate the seller above to close this conversation.'
                                 :
-                                ((!isBuyer && !!conversation.buyer_archived || isBuyer && !!conversation.seller_archived) ?
+                                ((conversation != null && !isBuyer && !!conversation.buyer_archived || isBuyer && !!conversation.seller_archived) ?
                                     'This conversation was archived by the other party. You cannot send new messages.'
                                     :
                                     'This conversation is archived. You cannot send new messages.')
