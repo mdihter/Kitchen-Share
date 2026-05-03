@@ -5,12 +5,14 @@ import { ListingCard } from "@/app/components/NewListingCard";
 import { useFavorites } from "@/app/hooks/useFavorites";
 import { useCurrentUser, useListings } from "@/app/hooks";
 import { useLocation } from "@/app/providers/LocationProvider";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import pb from "@/app/lib/pb";
 import type { Listing } from "@/app/types/listing";
 import { useRouter } from "next/navigation";
 import { setAuthRedirect } from "@/app/api/authRedirect";
 import { CATEGORY_OPTIONS } from "@/app/types/categories";
+
+const LEAVE_DURATION_MS = 300;
 
 export default function Favorites() {
     const userId = useCurrentUser();
@@ -19,18 +21,45 @@ export default function Favorites() {
     const { city, state, locationReady } = useLocation();
 
     const [categoryFilter, setCategoryFilter] = useState("all");
+    const [leavingIds, setLeavingIds] = useState<Set<string>>(new Set());
+    const leavingTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+    const [isLeavingEmpty, setIsLeavingEmpty] = useState(false);
+
+    const filteredFavorites = favorites.filter((listing: Listing) => {
+        const category = listing.category?.toLowerCase();
+        if (categoryFilter === "all") return true;
+        return category === categoryFilter;
+    });
+
+    const handleNearbyFavorite = useCallback(() => {
+        setIsLeavingEmpty(true);
+        refetch();
+    }, [refetch]);
+
+    const handleUnfavorite = useCallback((id: string) => {
+        // Cancel any existing timer for this id to avoid double-refetch
+        const existing = leavingTimers.current.get(id);
+        if (existing) clearTimeout(existing);
+
+        // If this is the last visible item in the current filter, snap back to all
+        if (filteredFavorites.filter(l => l.id !== id).length === 0 && categoryFilter !== "all") {
+            setCategoryFilter("all");
+        }
+
+        setLeavingIds(prev => new Set(prev).add(id));
+        const timer = setTimeout(() => {
+            leavingTimers.current.delete(id);
+            refetch();
+            setLeavingIds(prev => { const next = new Set(prev); next.delete(id); return next; });
+        }, LEAVE_DURATION_MS);
+        leavingTimers.current.set(id, timer);
+    }, [refetch, filteredFavorites, categoryFilter]);
 
     const { listings: nearbyListings, loading: nearbyLoading } = useListings({
         city,
         state,
         enabled: locationReady && !loading && favorites.length === 0,
         excludeSeller: userId,
-    });
-
-    const filteredFavorites = favorites.filter((listing: Listing) => {
-        const category = listing.category?.toLowerCase();
-        if (categoryFilter === "all") return true;
-        return category === categoryFilter;
     });
 
     useEffect(() => {
@@ -120,8 +149,16 @@ export default function Favorites() {
                     </div>
                 </div>
 
-                {favorites.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-24 animate-[fadeIn_250ms_ease-out]" style={{ animationFillMode: 'both' }}>
+                {(favorites.length === 0 || isLeavingEmpty) ? (
+                    <div
+                        onTransitionEnd={() => { if (isLeavingEmpty) setIsLeavingEmpty(false); }}
+                        className={`flex flex-col items-center justify-center py-24 transition-all duration-300 ${
+                            isLeavingEmpty
+                                ? 'opacity-0 scale-95 pointer-events-none'
+                                : 'opacity-100 scale-100 animate-[fadeIn_250ms_ease-out]'
+                        }`}
+                        style={{ animationFillMode: 'both' }}
+                    >
                         <h2 className="mb-5 text-center text-7xl font-bold tracking-tight text-stone-900">No favorites yet</h2>
                         <p className="mb-12 max-w-md text-center text-xl leading-relaxed text-stone-400">
                             Save listings you love and they&apos;ll show up here. In the meantime, check out what&apos;s popular near you.
@@ -148,7 +185,7 @@ export default function Favorites() {
                                     </p>
                                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                                         {nearbyListings.slice(0, 4).map((listing) => (
-                                            <ListingCard key={listing.id} listing={listing} favoriteIds={favoriteIds} />
+                                            <ListingCard key={listing.id} listing={listing} favoriteIds={favoriteIds} onFavorite={handleNearbyFavorite} />
                                         ))}
                                     </div>
                                 </div>
@@ -165,16 +202,22 @@ export default function Favorites() {
                         No favorites match these filters.
                     </p>
                 ) : (
-                    <ul className="grid list-none grid-cols-1 gap-7 p-0 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3 animate-[fadeIn_300ms_ease-out]">
                         {filteredFavorites.map((listing) => (
-                            <NewListingCard
+                            <div
                                 key={listing.id}
-                                listing={listing}
-                                favoriteIds={favoriteIds}
-                                onUnfavorite={refetch}
-                            />
+                                className={`transition-all duration-300 ${
+                                    leavingIds.has(listing.id) ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+                                }`}
+                            >
+                                <NewListingCard
+                                    listing={listing}
+                                    favoriteIds={favoriteIds}
+                                    onUnfavorite={() => handleUnfavorite(listing.id)}
+                                />
+                            </div>
                         ))}
-                    </ul>
+                    </div>
                 )}
             </div>
         </main>

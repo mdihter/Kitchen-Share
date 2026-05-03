@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import pb from '../lib/pb';
 import { Favorites } from '../types/favorites';
 import { Listing } from '../types/listing';
@@ -11,17 +11,20 @@ export function useFavorites(userId: string | null) {
     const [loading, setLoading] = useState(!!userId);
     const [error, setError] = useState<Error | null>(null);
     const [tick, setTick] = useState(0);
+    const hasDataRef = useRef(false);
 
     useEffect(() => {
         if (!userId) {
             setFavorites([]);
             setFavoriteIds(new Map());
             setLoading(false);
+            hasDataRef.current = false;
             return;
         }
 
         let cancelled = false;
-        setLoading(true);
+
+        if (!hasDataRef.current) setLoading(true);
         setError(null);
 
         const run = async () => {
@@ -54,6 +57,7 @@ export function useFavorites(userId: string | null) {
 
                 setFavorites(favoritedListings);
                 setFavoriteIds(favoriteMap);
+                hasDataRef.current = true;
             } catch (err) {
                 if (!cancelled) {
                     setError(err as Error);

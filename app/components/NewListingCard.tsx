@@ -13,10 +13,12 @@ export function ListingCard({
   listing,
   favoriteIds,
   onUnfavorite,
+  onFavorite,
 }: {
   listing: Listing;
   favoriteIds?: Map<string, string>;
   onUnfavorite?: () => void;
+  onFavorite?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
   const [isFavorite, setIsFavorite] = useState(() => favoriteIds?.has(listing.id) ?? null);
@@ -96,6 +98,7 @@ export function ListingCard({
 
         setIsFavorite(true);
         setFavoriteRecordId(newFavorite.id);
+        onFavorite?.();
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
