@@ -247,7 +247,6 @@ export default function ModalListing() {
     const rating = seller.rating ?? 5;
     const reviewCount = seller.reviewCount ?? 24;
     const mealsSold = seller.mealsSold ?? 39;
-    const badgeLabel = "Fresh";
     const kitchenNote = "Made with love by a neighbor.";
 
     return (
@@ -274,10 +273,6 @@ export default function ModalListing() {
                     <div className="grid max-h-[96vh] grid-cols-1 overflow-y-auto xl:grid-cols-[1.18fr_1fr]">
                         <div className="p-5 sm:p-7 xl:p-8">
                             <div className="relative overflow-hidden rounded-[26px] bg-black border border-black/10 shadow-inner">
-                                <div className="absolute left-7 top-6 z-20 rounded-full bg-[#78aa50] px-5 py-2 text-[15px] font-semibold text-white shadow-sm">
-                                    {badgeLabel}
-                                </div>
-
                                 <div className="flex items-center justify-center relative aspect-square w-full">
                                     <img
                                         src={getImageUrl(listing, activeImage, "1400x1200")}
