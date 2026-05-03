@@ -55,12 +55,7 @@ async function fetchBrowserLocation(): Promise<{ city: string; state: string; fr
                     );
                     if (!res.ok) { resolve(null); return; }
                     const data: { address?: Record<string, string> } = await res.json();
-                    const city =
-                        data.address?.city ??
-                        data.address?.town ??
-                        data.address?.village ??
-                        data.address?.suburb ??
-                        null;
+                    const city = data.address?.city ?? null;
                     // ISO3166-2-lvl4 is "US-CA" style; grab the abbreviation after the dash
                     const stateCode = data.address?.["ISO3166-2-lvl4"]?.split("-")[1] ?? null;
                     if (city && stateCode) {
