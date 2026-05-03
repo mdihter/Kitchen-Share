@@ -29,7 +29,7 @@ const navItems = [
 function NavItem({ Icon = CircleQuestionMark, label = "", url = "", loginRequired = false, badge = 0 }) {
     const currentUserId = useCurrentUser();
     const pathName = usePathname();
-    const isActive = url === pathName;
+    const isActive = pathName.substring(0, url.length) === url;
     const {setIsOnLogin} = useIsLogin();
 
     const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
