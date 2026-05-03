@@ -233,7 +233,7 @@ export default function ConversationPage() {
        try{
            const conversationOnline = await pb.collection('conversations').getOne(conversation?.id ? conversation.id : conversationId);
            // Archive convo
-           await pb.collection('conversations').update(conversationId, {
+           await pb.collection('conversations').update(conversation?.id ? conversation.id : conversationId, {
                buyer_archived: (conversationOnline?.buyer_archived || isBuyer),
                seller_archived: (conversationOnline?.seller_archived || !isBuyer),
                buyer_deleted: (conversationOnline?.buyer_deleted || isBuyer),
