@@ -200,6 +200,15 @@ export default function Navbar({ sidebarOpen, onToggleSidebar }: NavbarProps) {
 
                                                 <button
                                                     type="button"
+                                                    onClick={handleBlockedUsers}
+                                                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-stone-700 transition-colors hover:bg-stone-50 hover:text-stone-900"
+                                                >
+                                                    <Ban className="h-4 w-4" />
+                                                    <span>Blocked Users</span>
+                                                </button>
+
+                                                <button
+                                                    type="button"
                                                     onClick={handleLogout}
                                                     className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-stone-700 transition-colors hover:bg-stone-50 hover:text-stone-900"
                                                 >
@@ -207,14 +216,6 @@ export default function Navbar({ sidebarOpen, onToggleSidebar }: NavbarProps) {
                                                     <span>Logout</span>
                                                 </button>
 
-                                                <button
-                                                    type="button"
-                                                    onClick={handleBlockedUsers}
-                                                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-stone-700 transition-colors hover:bg-stone-50 hover:text-stone-900"
-                                                >
-                                                    <Ban className="h-4 w-4" />
-                                                    <span>Blocked Users</span>
-                                                </button>
                                             </div>
                                         </div>
                                     )}
