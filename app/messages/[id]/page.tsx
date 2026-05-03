@@ -276,7 +276,7 @@ export default function ConversationPage() {
             <div className="flex-1 flex items-center justify-center bg-gray-50">
                 <p className="text-gray-500 text-sm">
                     Please{' '}
-                    <a onClick={setIsOnLogin(true)} className="text-orange-500 hover:underline">log in</a>{' '}
+                    <a onClick={() => setIsOnLogin(true)} className="text-orange-500 hover:underline">log in</a>{' '}
                     to view messages.
                 </p>
             </div>
