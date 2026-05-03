@@ -52,7 +52,7 @@ export function useStartConversation(userId: string) {
 
         try {
             const existing = await pb.collection('conversations').getFirstListItem(
-                `((buyer="${currentUserId}" && seller="${userId}") || (buyer="${userId}" && seller="${currentUserId}")) && ${listingFilter}`
+                `((buyer="${currentUserId}" && seller="${userId}" && buyer_archived=false) || (buyer="${userId}" && seller="${currentUserId}" && seller_archived=false)) && ${listingFilter}`
             );
             router.push('/messages/' + existing.id);
         } catch (err) {
