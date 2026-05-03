@@ -1,46 +1,40 @@
 'use client';
 
 import { ListingCard as NewListingCard } from "@/app/components/NewListingCard";
+import { ListingCard } from "@/app/components/NewListingCard";
 import { useFavorites } from "@/app/hooks/useFavorites";
-import { useCurrentUser } from "@/app/hooks";
+import { useCurrentUser, useListings } from "@/app/hooks";
+import { useLocation } from "@/app/providers/LocationProvider";
 import { useEffect, useState } from "react";
+import pb from "@/app/lib/pb";
+import type { Listing } from "@/app/types/listing";
 import { useRouter } from "next/navigation";
 import { setAuthRedirect } from "@/app/api/authRedirect";
-import { Pizza, Soup, Leaf, CupSoda, Salad, Fish, Sandwich, Beef, Utensils, Coffee, IceCream } from "lucide-react";
+import { CATEGORY_OPTIONS } from "@/app/types/categories";
 
 export default function Favorites() {
     const userId = useCurrentUser();
     const { favorites, favoriteIds, loading, error, refetch } = useFavorites(userId);
     const router = useRouter();
+    const { city, state, locationReady } = useLocation();
 
     const [categoryFilter, setCategoryFilter] = useState("all");
-    
-    const categoryFilters = [
-    { label: "All", value: "all", icon: <Utensils size={16} /> },
-    { label: "Pizza", value: "pizza", icon: <Pizza size={16} /> },
-    { label: "Burgers", value: "burgers", icon: <Beef size={16} /> },
-    { label: "BBQ", value: "bbq", icon: <Beef size={16} /> },
-    { label: "Sandwiches", value: "sandwiches", icon: <Sandwich size={16} /> },
-    { label: "Pasta", value: "pasta", icon: <Soup size={16} /> },
-    { label: "Seafood", value: "seafood", icon: <Fish size={16} /> },
-    { label: "Salads", value: "salads", icon: <Salad size={16} /> },
-    { label: "Breakfast", value: "breakfast", icon: <Coffee size={16} /> },
-    { label: "Desserts", value: "desserts", icon: <IceCream size={16} /> },
-    { label: "Drinks", value: "drinks", icon: <CupSoda size={16} /> },
-    { label: "Vegan", value: "vegan", icon: <Leaf size={16} /> }
-    ];
 
-    const filteredFavorites = favorites.filter((listing: any) => {
+    const { listings: nearbyListings, loading: nearbyLoading } = useListings({
+        city,
+        state,
+        enabled: locationReady && !loading && favorites.length === 0,
+        excludeSeller: userId,
+    });
+
+    const filteredFavorites = favorites.filter((listing: Listing) => {
         const category = listing.category?.toLowerCase();
-
         if (categoryFilter === "all") return true;
-
         return category === categoryFilter;
     });
 
-
     useEffect(() => {
-        if (!userId) {
+        if (!userId && !pb.authStore.isValid) {
             setAuthRedirect();
             router.push("/auth");
         }
@@ -48,21 +42,21 @@ export default function Favorites() {
 
     if (!userId) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-100">
-                <p className="text-gray-500">Loading...</p>
+            <div className="flex min-h-screen items-center justify-center bg-stone-50">
+                <p className="text-stone-400">Loading...</p>
             </div>
         );
     }
 
     if (error) {
         return (
-            <main className="min-h-screen bg-white font-sans relative overflow-hidden">
+            <main className="min-h-screen bg-stone-50">
                 <div className="mx-auto max-w-6xl px-8 py-16">
                     <h1 className="text-4xl font-bold tracking-tight text-stone-900 sm:text-5xl">
                         Your Favorites
                     </h1>
-                    <p className="text-lg text-red-500 mt-10">Couldn&apos;t load favorites.</p>
-                    <button onClick={refetch} className="mt-4 px-4 py-2 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-700 transition">
+                    <p className="mt-10 text-lg text-red-500">Couldn&apos;t load favorites.</p>
+                    <button onClick={refetch} className="mt-4 rounded-xl bg-stone-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-700">
                         Retry
                     </button>
                 </div>
@@ -72,21 +66,19 @@ export default function Favorites() {
 
     if (loading) {
         return (
-            <main className="min-h-screen bg-white font-sans relative overflow-hidden">
+            <main className="min-h-screen bg-stone-50">
                 <div className="mx-auto max-w-6xl px-8 py-16">
                     <h1 className="text-4xl font-bold tracking-tight text-stone-900 sm:text-5xl">
                         Your Favorites
                     </h1>
-                    <p className="text-lg text-gray-500 mt-10">
-                        Loading...
-                    </p>
+                    <p className="mt-10 text-lg text-stone-400">Loading...</p>
                 </div>
             </main>
         );
     }
 
     return (
-        <main className="min-h-screen bg-white font-sans relative overflow-hidden">
+        <main className="min-h-screen bg-stone-50">
             <div className="mx-auto max-w-6xl px-8 py-16">
                 <div className="mb-8">
                     <h1 className="text-4xl font-bold tracking-tight text-stone-900 sm:text-5xl">
@@ -98,32 +90,78 @@ export default function Favorites() {
                 </div>
 
                 <div className="mb-10 flex flex-col gap-4">
-
-                    <div className="flex flex-wrap gap-3">
-                        {categoryFilters.map((filter) => (
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button
+                            key="all"
+                            type="button"
+                            onClick={() => setCategoryFilter("all")}
+                            className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition ${
+                                categoryFilter === "all"
+                                    ? "border-orange-500 bg-orange-500 text-white shadow-sm"
+                                    : "border-stone-100 bg-white text-stone-700 hover:border-stone-300"
+                            }`}
+                        >
+                            🍽️ All
+                        </button>
+                        {CATEGORY_OPTIONS.map(({ value, label, emoji }) => (
                             <button
-                                key={filter.value}
+                                key={value}
                                 type="button"
-                                onClick={() => setCategoryFilter(filter.value)}
-                                className={`rounded-full px-5 py-2.5 text-sm font-semibold transition ${
-                                    categoryFilter === filter.value
-                                        ? "bg-orange-500 text-white shadow-sm"
-                                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                onClick={() => setCategoryFilter(value)}
+                                className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition ${
+                                    categoryFilter === value
+                                        ? "border-orange-500 bg-orange-500 text-white shadow-sm"
+                                        : "border-stone-100 bg-white text-stone-700 hover:border-stone-300"
                                 }`}
                             >
-                                {filter.icon}
-                                {filter.label}
+                                <span className="mr-1">{emoji}</span>{label}
                             </button>
                         ))}
                     </div>
                 </div>
 
                 {favorites.length === 0 ? (
-                    <p className="text-lg text-gray-500 mt-10">
-                        You have no favorite meals yet.
-                    </p>
+                    <div className="flex flex-col items-center justify-center py-24 animate-[fadeIn_250ms_ease-out]" style={{ animationFillMode: 'both' }}>
+                        <h2 className="mb-5 text-center text-7xl font-bold tracking-tight text-stone-900">No favorites yet</h2>
+                        <p className="mb-12 max-w-md text-center text-xl leading-relaxed text-stone-400">
+                            Save listings you love and they&apos;ll show up here. In the meantime, check out what&apos;s popular near you.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => router.push("/home")}
+                            className="mb-24 rounded-2xl bg-orange-500 px-10 py-4 text-lg font-semibold text-white shadow-sm transition hover:bg-orange-600"
+                        >
+                            Browse Listings →
+                        </button>
+
+                        {locationReady && (
+                            nearbyLoading ? (
+                                <div className="w-full grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                                    {Array.from({ length: 4 }).map((_, i) => (
+                                        <div key={i} className="h-75 animate-pulse rounded-3xl border border-stone-200 bg-white" />
+                                    ))}
+                                </div>
+                            ) : nearbyListings.length > 0 ? (
+                                <div className="w-full">
+                                    <p className="mb-6 text-center text-xs font-semibold uppercase tracking-wider text-stone-400">
+                                        {city && state ? `Available near ${city}, ${state}` : 'Popular listings'}
+                                    </p>
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                                        {nearbyListings.slice(0, 4).map((listing) => (
+                                            <ListingCard key={listing.id} listing={listing} favoriteIds={favoriteIds} />
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (city && state) ? (
+                                <div className="flex flex-col items-center gap-3">
+                                    <p className="text-center text-3xl font-bold text-stone-700">Nothing nearby in {city}, {state}</p>
+                                    <p className="max-w-sm text-center text-lg text-stone-400">Try a different location from the navbar or check back later.</p>
+                                </div>
+                            ) : null
+                        )}
+                    </div>
                 ) : filteredFavorites.length === 0 ? (
-                    <p className="text-lg text-gray-500 mt-10">
+                    <p className="mt-10 text-lg text-stone-400">
                         No favorites match these filters.
                     </p>
                 ) : (
