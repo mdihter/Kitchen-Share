@@ -231,13 +231,11 @@ export default function ConversationPage() {
        setFinalizationError('');
 
        try{
-           const conversationOnline = await pb.collection('conversations').getOne(conversation?.id ? conversation.id : conversationId);
            // Archive convo
-           await pb.collection('conversations').update(conversation?.id ? conversation.id : conversationId, {
-               buyer_archived: (conversationOnline?.buyer_archived || isBuyer),
-               seller_archived: (conversationOnline?.seller_archived || !isBuyer),
-               buyer_deleted: (conversationOnline?.buyer_deleted || isBuyer),
-               seller_deleted: (conversationOnline?.seller_deleted || !isBuyer),
+           await pb.collection('conversations').update(conversationId, {
+               buyer_archived: true,
+               seller_archived: true,
+               saleCancelled: true,
                cached_listing_title: conversation?.title ?? null,
                cached_listing_price: conversation?.price ?? null,
                cached_listing_image_url: conversation?.main_image ? pb.files.getURL(conversation, conversation.main_image) : null
