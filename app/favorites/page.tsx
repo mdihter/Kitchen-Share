@@ -2,15 +2,44 @@
 
 import { ListingCard } from "@/app/components/ListingCard";
 import { useFavorites } from "@/app/hooks/useFavorites";
-import {useCurrentUser} from "@/app/hooks";
-import {useEffect} from "react";
+import { useCurrentUser } from "@/app/hooks";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {setAuthRedirect} from "@/app/api/authRedirect";
+import { setAuthRedirect } from "@/app/api/authRedirect";
 
 export default function Favorites() {
     const userId = useCurrentUser();
     const { favorites, favoriteIds, loading, error, refetch } = useFavorites(userId);
     const router = useRouter();
+
+    const [categoryFilter, setCategoryFilter] = useState("all");
+    
+    const categoryFilters = [
+        {label: "All", value: "all"},
+        {label: "🍕 Pizza", value: "pizza"},
+        {label: "🍔 Burgers", value: "burgers"},
+        {label: "🍖 BBQ", value: "bbq"},
+        {label: "🌮 Tacos", value: "tacos"},
+        {label: "🥪 Sandwiches", value: "sandwiches"},
+        {label: "🍝 Pasta", value: "pasta"},
+        {label: "🦞 Seafood", value: "seafood"},
+        {label: "🥗 Salads", value: "salads"},
+        {label: "🍳 Breakfast", value: "breakfast"},
+        {label: "🍰 Desserts", value: "desserts"},
+        {label: "🧃 Drinks", value: "drinks"},
+        {label: "🥦 Vegan", value: "vegan"},
+        {label: "🍲 Comfort Food", value: "comfort food"},
+        {label: "🍽️ Other", value: "other"},
+    ];
+
+    const filteredFavorites = favorites.filter((listing: any) => {
+        const category = listing.category?.toLowerCase();
+
+        if (categoryFilter === "all") return true;
+
+        return category === categoryFilter;
+    });
+
 
     useEffect(() => {
         if (!userId) {
@@ -19,18 +48,19 @@ export default function Favorites() {
         }
     }, [userId, router]);
 
-    // We don't want the user to see the create listing page if they aren't logged in
     if (!userId) {
-        return  <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <p className="text-gray-500">Loading...</p>
-        </div>
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                <p className="text-gray-500">Loading...</p>
+            </div>
+        );
     }
 
     if (error) {
         return (
             <main className="min-h-screen bg-white font-sans relative overflow-hidden">
-                <div className="p-6 text-center">
-                    <h1 className="mb-8 text-4xl font-bold tracking-tight text-stone-900 sm:text-5xl">
+                <div className="mx-auto max-w-6xl px-8 py-16">
+                    <h1 className="text-4xl font-bold tracking-tight text-stone-900 sm:text-5xl">
                         Your Favorites
                     </h1>
                     <p className="text-lg text-red-500 mt-10">Couldn&apos;t load favorites.</p>
@@ -45,11 +75,11 @@ export default function Favorites() {
     if (loading) {
         return (
             <main className="min-h-screen bg-white font-sans relative overflow-hidden">
-                <div className="p-6">
-                    <h1 className="mb-8 text-4xl font-bold tracking-tight text-stone-900 sm:text-5xl text-center">
+                <div className="mx-auto max-w-6xl px-8 py-16">
+                    <h1 className="text-4xl font-bold tracking-tight text-stone-900 sm:text-5xl">
                         Your Favorites
                     </h1>
-                    <p className="text-lg text-gray-500 text-center mt-10">
+                    <p className="text-lg text-gray-500 mt-10">
                         Loading...
                     </p>
                 </div>
@@ -59,25 +89,55 @@ export default function Favorites() {
 
     return (
         <main className="min-h-screen bg-white font-sans relative overflow-hidden">
-            <div className="p-6">
-                {/* Title */}
-                <h1 className="mb-8 text-4xl font-bold tracking-tight text-stone-900 sm:text-5xl text-center">
-                    Your Favorites
-                </h1>
+            <div className="mx-auto max-w-6xl px-8 py-16">
+                <div className="mb-8">
+                    <h1 className="text-4xl font-bold tracking-tight text-stone-900 sm:text-5xl">
+                        Your Favorites
+                    </h1>
+                    <p className="mt-2 text-lg font-medium text-stone-500">
+                        {favorites.length} saved {favorites.length === 1 ? "item" : "items"}
+                    </p>
+                </div>
 
-                {/* Empty state */}
+                <div className="mb-10 flex flex-col gap-4">
+
+                    <div className="flex flex-wrap gap-3">
+                        {categoryFilters.map((filter) => (
+                            <button
+                                key={filter.value}
+                                type="button"
+                                onClick={() => setCategoryFilter(filter.value)}
+                                className={`rounded-full px-5 py-2.5 text-sm font-semibold transition ${
+                                    categoryFilter === filter.value
+                                        ? "bg-orange-500 text-white shadow-sm"
+                                        : "border border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                                }`}
+                            >
+                                {filter.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
                 {favorites.length === 0 ? (
-                    <p className="text-lg text-gray-500 text-center mt-10">
+                    <p className="text-lg text-gray-500 mt-10">
                         You have no favorite meals yet.
                     </p>
+                ) : filteredFavorites.length === 0 ? (
+                    <p className="text-lg text-gray-500 mt-10">
+                        No favorites match these filters.
+                    </p>
                 ) : (
-                    <div className="flex justify-center mt-16 mb-24 mx-6">
-                        <ul className="grid gap-10 grid-cols-[repeat(auto-fill,minmax(177px,1fr))] max-w-[1200px] w-full list-none p-0">
-                            {favorites.map((listing) => (
-                                <ListingCard key={listing.id} listing={listing} favoriteIds={favoriteIds} onUnfavorite={refetch} />
-                            ))}
-                        </ul>
-                    </div>
+                    <ul className="grid list-none grid-cols-1 gap-7 p-0 sm:grid-cols-2 lg:grid-cols-3">
+                        {filteredFavorites.map((listing) => (
+                            <ListingCard
+                                key={listing.id}
+                                listing={listing}
+                                favoriteIds={favoriteIds}
+                                onUnfavorite={refetch}
+                            />
+                        ))}
+                    </ul>
                 )}
             </div>
         </main>

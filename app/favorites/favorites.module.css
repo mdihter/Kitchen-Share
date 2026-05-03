@@ -1,25 +1,78 @@
-.flexContainer{
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    margin-top: 60px;
-    margin-bottom: 100px;
-    margin-right: 24px;
-    margin-left: 24px;
+.pageWrapper {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 72px 32px 120px;
 }
 
-.gridLayout{
+.header {
+    margin-bottom: 28px;
+}
+
+.title {
+    font-size: 42px;
+    font-weight: 800;
+    color: #111827;
+    margin: 0;
+}
+
+.subtitle {
+    font-size: 18px;
+    color: #737373;
+    margin-top: 8px;
+}
+
+.filterSection {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 36px;
+}
+
+.filterRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.filterButton {
+    border: 1px solid #e5e7eb;
+    background: white;
+    color: #666;
+    border-radius: 999px;
+    padding: 10px 22px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filterButton:hover {
+    background: #f7f7f7;
+}
+
+.filterButtonActive {
+    background: #ff6b00;
+    border-color: #ff6b00;
+    color: white;
+}
+
+.mealButtonActive {
+    background: #12372a;
+    border-color: #12372a;
+    color: white;
+}
+
+.gridLayout {
     display: grid;
     list-style: none;
-    padding-inline-start: 0;
-    grid-gap: 100px;
-    grid-template-columns: repeat(auto-fill, minmax(177px, 1fr));
-    margin: 0 auto;
-    width: 2000px;
-    max-width: 1200px;
+    padding: 0;
+    margin: 0;
+    gap: 28px;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 }
 
-.emptyMessage{
+.emptyMessage {
     font-size: 18px;
     color: gray;
     text-align: center;
