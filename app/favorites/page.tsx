@@ -74,7 +74,7 @@ export default function Favorites() {
     if (error) {
         return (
             <main className="min-h-screen bg-stone-50">
-                <div className="mx-auto max-w-screen-2xl px-8 py-16">
+                <div className="mx-auto max-w-[1536px] px-8 py-16">
                     <h1 className="text-4xl font-bold tracking-tight text-stone-900 sm:text-5xl">
                         Your Favorites
                     </h1>
@@ -90,7 +90,7 @@ export default function Favorites() {
     if (loading) {
         return (
             <main className="min-h-screen bg-stone-50">
-                <div className="mx-auto max-w-screen-2xl px-8 py-16">
+                <div className="mx-auto max-w-[1536px] px-8 py-16">
                     <h1 className="text-4xl font-bold tracking-tight text-stone-900 sm:text-5xl">
                         Your Favorites
                     </h1>
@@ -102,7 +102,7 @@ export default function Favorites() {
 
     return (
         <main className="min-h-screen bg-stone-50">
-            <div className="mx-auto max-w-screen-2xl px-8 py-16">
+            <div className="mx-auto max-w-[1536px] px-8 py-16">
                 <div className="mb-8">
                     <h1 className="text-4xl font-bold tracking-tight text-stone-900 sm:text-5xl">
                         Your Favorites
