@@ -31,6 +31,7 @@ type Errors = {
     location?: string;
     images?: string;
     category?: string;
+    description?: string;
 };
 
 export default function CreateListing() {
@@ -126,6 +127,7 @@ export default function CreateListing() {
         if (!price || isNaN(Number(price)) || Number(price) < 0) newErrors.price = "Valid price is required";
         if (!locationCity.trim()) newErrors.location = "City is required";
         if (!category.trim()) newErrors.category = "Category is required";
+        if (description.length < 5) newErrors.description = "Description must be at least 5 characters long";
         if (images.length === 0) newErrors.images = "Please upload at least one photo";
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -314,18 +316,20 @@ export default function CreateListing() {
                             <SectionHeader number={3} title="Details" />
                             <div className="mt-4 grid gap-x-7 gap-y-4 md:grid-cols-2">
                                 <div>
-                                    <FieldLabel>Description</FieldLabel>
+                                    <FieldLabel required>Description</FieldLabel>
                                     <div className="relative">
                                         <textarea
                                             placeholder="Tell buyers about your food..."
+                                            minLength={5}
                                             maxLength={MAX_DESC}
                                             value={description}
                                             onChange={e => setDescription(e.target.value)}
-                                            className="h-24 w-full resize-none rounded-lg border border-[#e5e7eb] bg-white px-3 py-3 text-[14px] text-[#111827] outline-none transition placeholder:text-[#9ca3af] focus:border-[#ff6a00] focus:ring-2 focus:ring-orange-100"
+                                            className={`${inputWrapClass(!!errors.title)} h-24 w-full resize-none rounded-lg border border-[#e5e7eb] bg-white px-3 py-3 text-[14px] text-[#111827] outline-none transition placeholder:text-[#9ca3af] focus:border-[#ff6a00] focus:ring-2 focus:ring-orange-100`}
                                         />
                                         <span className="absolute bottom-2 right-3 text-[12px] text-[#9ca3af]">
                                             {description.length}/{MAX_DESC}
                                         </span>
+                                        {errors.description && <ErrMsg>{errors.description}</ErrMsg>}
                                     </div>
                                 </div>
 
