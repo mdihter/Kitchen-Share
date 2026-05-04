@@ -584,7 +584,7 @@ export default function MyListingsPage() {
     }[selectedTab];
 
     return (
-        <div className="w-full px-6 py-10 sm:px-8 lg:px-12 xl:px-16">
+        <div className="w-full min-h-screen bg-stone-50 px-6 py-10 sm:px-8 lg:px-12 xl:px-16">
             <div className="mx-auto max-w-[1600px]">
                 {/* Header */}
                 <div className="mb-12 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
