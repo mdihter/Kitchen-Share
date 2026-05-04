@@ -207,7 +207,7 @@ export default function ModalListing() {
     };
 
     const pathname = usePathname();
-    const hideBuyButtons = pathname.includes("messages") || currentUser == data?.seller.id;
+    const hideBuyButtons = pathname.includes("messages/") || currentUser == data?.seller.id;
 
     useEffect(() => {
         if (open) closeListing();
