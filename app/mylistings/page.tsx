@@ -8,6 +8,7 @@ import { useMyListings } from '@/app/hooks/useMyListings';
 import type { Listing } from '@/app/types/listing';
 import EditListingModal from '@/app/components/EditListingModal';
 import { getListingStats } from '@/app/api/getStats';
+import { useIsListing } from '@/app/providers/ListingProvider';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -547,6 +548,7 @@ function ListingMetaItem({ label, value }: { label: string; value: string | numb
 export default function MyListingsPage() {
     const router = useRouter();
     const { listings, loading, error, refetch } = useMyListings();
+    const { openListing } = useIsListing();
 
     const [selectedTab, setSelectedTab] = useState<ListingTab>('active');
     const [visibleCount, setVisibleCount] = useState(6);
@@ -651,8 +653,9 @@ export default function MyListingsPage() {
                                         className="rounded-2xl border border-stone-100 bg-white p-4 shadow-[0_12px_45px_rgba(28,25,23,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_55px_rgba(28,25,23,0.12)]"
                                     >
                                         <div className="flex flex-col gap-6 xl:flex-row xl:items-center">
-                                            <Link
-                                                href={`/listing/${listing.id}`}
+                                            <button
+                                                type="button"
+                                                onClick={() => openListing(listing.id)}
                                                 className="relative block h-56 w-full shrink-0 overflow-hidden rounded-xl bg-stone-100 sm:h-64 xl:h-[208px] xl:w-[240px]"
                                             >
                                                 <img
@@ -663,14 +666,14 @@ export default function MyListingsPage() {
                                                 <span className="absolute bottom-4 right-4 rounded-full bg-white/85 px-4 py-2 text-sm font-extrabold text-stone-900 shadow-sm backdrop-blur-sm">
                                                     {formatPrice(listing.price)}
                                                 </span>
-                                            </Link>
+                                            </button>
 
                                             <div className="min-w-0 flex-1 xl:max-w-[360px] xl:pr-8">
-                                                <Link href={`/listing/${listing.id}`} className="group inline-block max-w-full">
+                                                <button type="button" onClick={() => openListing(listing.id)} className="group inline-block max-w-full text-left">
                                                     <h2 className="truncate text-xl font-extrabold text-stone-950 group-hover:text-orange-500">
                                                         {listing.title || 'Untitled listing'}
                                                     </h2>
-                                                </Link>
+                                                </button>
 
                                                 <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-stone-400">
                                                     <MapPin className="h-4 w-4 shrink-0" />

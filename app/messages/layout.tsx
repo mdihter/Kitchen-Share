@@ -4,19 +4,17 @@ import type {RecordModel} from 'pocketbase';
 import {useConversations, useCurrentUser} from '../hooks';
 import pb from '../lib/pb';
 import {formatRelativeTime} from '../lib/formatTime';
-import {getBlockedByUserIds, getBlockedUserIds} from '../lib/blockUtils';
 import Link from 'next/link';
 import {Suspense, useEffect, useRef, useState} from 'react';
 import {usePathname, useRouter} from 'next/navigation';
 import {Search} from 'lucide-react';
-import {RemoveConversationContext as RemoveConversationContext1, RemoveArchivedConversationContext} from "@/app/messages/removeConversationContext";
+import {RemoveConversationContext as RemoveConversationContext1, RemoveArchivedConversationContext, NextArchivedContext} from "@/app/messages/removeConversationContext";
 
 type Tab = 'inbox' | 'dm' | 'archived';
 
 function MessagesShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const [activeTab, setActiveTab] = useState<Tab>('inbox');
-    const [archivedEverOpened, setArchivedEverOpened] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 7;
@@ -24,11 +22,9 @@ function MessagesShell({ children }: { children: React.ReactNode }) {
     const currentUserId = useCurrentUser();
     const { conversations, loading, removeConversation } = useConversations(currentUserId);
     const { conversations: archivedConversations, loading: archivedLoading, removeConversation: removeArchivedConversation } = useConversations(
-        archivedEverOpened ? currentUserId : null,
+        currentUserId,
         true
     );
-    const [blockedUserIds, setBlockedUserIds] = useState<string[]>([]);
-    const [blockedByUserIds, setBlockedByUserIds] = useState<string[]>([]);
 
     // Extract active conversation ID from path
     const activeConvoId = pathname.startsWith('/messages/')
@@ -38,7 +34,6 @@ function MessagesShell({ children }: { children: React.ReactNode }) {
     const router = useRouter();
 
     const handleTabChange = (tab: Tab) => {
-        if (tab === 'archived') setArchivedEverOpened(true);
         setActiveTab(tab);
 
         // Pick the list for the target tab and navigate to its first item, or /messages if empty
@@ -61,10 +56,7 @@ function MessagesShell({ children }: { children: React.ReactNode }) {
         } else if (wasInActiveListRef.current && activeTab !== 'archived') {
             // Was active, now gone — it got archived. Defer to avoid setState-in-effect warning.
             wasInActiveListRef.current = false;
-            setTimeout(() => {
-                setArchivedEverOpened(true);
-                setActiveTab('archived');
-            }, 0);
+            setTimeout(() => setActiveTab('archived'), 0);
         }
     }, [activeConvoId, conversations, loading, activeTab]);
 
@@ -84,25 +76,8 @@ function MessagesShell({ children }: { children: React.ReactNode }) {
         return () => { document.body.style.overflow = prev; };
     }, []);
 
-    useEffect(() => {
-        if (!currentUserId) return;
-        Promise.all([
-            getBlockedUserIds(currentUserId),
-            getBlockedByUserIds(currentUserId),
-        ]).then(([blocked, blockedBy]) => {
-            setBlockedUserIds(blocked);
-            setBlockedByUserIds(blockedBy);
-        });
-    }, [currentUserId]);
-
-    const filterBlocked = (list: RecordModel[]) =>
-        list.filter((convo) => {
-            const otherUserId = convo.buyer === currentUserId ? convo.seller : convo.buyer;
-            return !blockedUserIds.includes(otherUserId) && !blockedByUserIds.includes(otherUserId);
-        });
-
-    const visibleConversations = filterBlocked(conversations);
-    const visibleArchived = filterBlocked(archivedConversations);
+    const visibleConversations = conversations;
+    const visibleArchived = archivedConversations;
 
     const isLoading = activeTab === 'archived' ? archivedLoading : loading;
     const displayList =
@@ -158,6 +133,12 @@ function MessagesShell({ children }: { children: React.ReactNode }) {
     return (
         <RemoveConversationContext1 value={removeConversation}>
         <RemoveArchivedConversationContext value={removeArchivedConversation}>
+        <NextArchivedContext value={(currentId) => {
+            const idx = archivedConversations.findIndex(c => c.id === currentId);
+            if (idx === -1) return archivedConversations[0]?.id ?? null;
+            // prefer next item, fall back to previous
+            return (archivedConversations[idx + 1] ?? archivedConversations[idx - 1])?.id ?? null;
+        }}>
         <div className="flex overflow-hidden bg-gray-50" style={{ height: 'calc(100vh - 73px)' }}>
             {/* ── Conversation list panel ── */}
             <div className="w-105 shrink-0 flex flex-col border-r border-gray-200 bg-white">
@@ -388,6 +369,7 @@ function MessagesShell({ children }: { children: React.ReactNode }) {
             {/* ── Right panel (page content) ── */}
             <div className="flex-1 flex flex-col overflow-hidden min-w-0">{children}</div>
         </div>
+        </NextArchivedContext>
         </RemoveArchivedConversationContext>
         </RemoveConversationContext1>
     );

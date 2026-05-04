@@ -9,7 +9,7 @@ import { hasBlocked, isBlockedBy } from '@/app/lib/blockUtils';
 import { useIsListing } from '@/app/providers/ListingProvider';
 
 import {useIsLogin} from "@/app/providers/LoginProvider";
-import {RemoveArchivedConversationContext} from "@/app/messages/removeConversationContext";
+import {RemoveArchivedConversationContext, NextArchivedContext} from "@/app/messages/removeConversationContext";
 import BuyerRatingModal from "@/app/messages/[id]/BuyerRatingModal";
 
 interface MessageInputProps {
@@ -105,6 +105,7 @@ export default function ConversationPage() {
     const { setIsOnLogin } = useIsLogin();
     const { openListing } = useIsListing();
     const removeArchivedConversation = useContext(RemoveArchivedConversationContext);
+    const getNextArchived = useContext(NextArchivedContext);
     const [finalizationError, setFinalizationError] = useState('');
     const [isBlocked, setIsBlocked] = useState(false);
     const [showCancel, setShowCancel] = useState(false);
@@ -341,14 +342,15 @@ export default function ConversationPage() {
             await pb.collection('conversations').update(conversationId, {
                 [isBuyer ? 'buyer_deleted' : 'seller_deleted']: true,
             });
+            const nextId = getNextArchived(conversationId);
             removeArchivedConversation(conversationId);
-            router.push('/messages');
+            router.push(nextId ? `/messages/${nextId}` : '/messages?tab=archived');
             return true;
         } catch (err: unknown) {
             console.error('Error deleting archive:', err);
             return false;
         }
-    }, [conversationId, isBuyer, router, removeArchivedConversation]);
+    }, [conversationId, isBuyer, router, removeArchivedConversation, getNextArchived]);
 
     if (!currentUserId) {
         return (
