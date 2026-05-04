@@ -367,7 +367,7 @@ export default function ModalListing() {
                                 <div className="border-t border-black/10 pt-8">
                                     <div className="text-[16px] font-medium text-neutral-500">Sold by</div>
 
-                                    <Link href={`profile/${seller.id}`}>
+                                    <Link href={`/profile/${seller.id}`}>
                                         <div className="mt-5 flex items-center gap-4">
                                             <div className="relative h-17 w-17 overflow-hidden rounded-full bg-neutral-100 ring-1 ring-black/5">
                                                 {seller.avatar ?
