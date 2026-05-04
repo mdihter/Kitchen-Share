@@ -113,12 +113,10 @@ export function useConversations(currentUserId: string | null, archived = false)
 
         return () => {
             isCancelled = true;
-            if (unsubscribe) {
-                unsubscribe();
-            } else {
-                pb.collection('conversations').unsubscribe('*');
-            }
+            if (unsubscribe) unsubscribe();
         };
+        // archived is covered transitively — fetchAndPatchOne captures it in its own deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentUserId, fetchAndPatchOne]);
 
     const refetch = useCallback(() => fetchConversations(), [fetchConversations]);

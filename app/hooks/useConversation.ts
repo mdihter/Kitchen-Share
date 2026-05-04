@@ -168,7 +168,6 @@ export function useConversation(conversationId: string, currentUserId: string | 
         return () => {
             isCancelled = true;
             if (unsubscribe) unsubscribe();
-            else pb.collection('messages').unsubscribe('*');
         };
     }, [conversationId, currentUserId, visibilityFilter]);
 
@@ -198,7 +197,6 @@ export function useConversation(conversationId: string, currentUserId: string | 
         return () => {
             isCancelled = true;
             if (unsubscribe) unsubscribe();
-            else pb.collection('conversations').unsubscribe(conversationId);
         };
     }, [conversationId, currentUserId]);
 

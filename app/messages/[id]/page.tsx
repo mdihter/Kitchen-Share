@@ -8,9 +8,82 @@ import { getDateKey, formatTime, formatDateSeparator } from '../../lib/formatTim
 import { hasBlocked, isBlockedBy } from '@/app/lib/blockUtils';
 import { useIsListing } from '@/app/providers/ListingProvider';
 
-import {RemoveConversationContext} from "@/app/messages/removeConversationContext";
 import {useIsLogin} from "@/app/providers/LoginProvider";
+import {RemoveArchivedConversationContext} from "@/app/messages/removeConversationContext";
 import BuyerRatingModal from "@/app/messages/[id]/BuyerRatingModal";
+
+interface MessageInputProps {
+    onSend: (msg: string) => Promise<void>;
+    disabled: boolean;
+    error?: string;
+}
+
+function MessageInput({ onSend, disabled, error }: MessageInputProps) {
+    const [newMessage, setNewMessage] = useState('');
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+        }
+    }, [newMessage]);
+
+    const handleSend = async () => {
+        if (!newMessage.trim()) return;
+        const msg = newMessage;
+        setNewMessage('');
+        try {
+            await onSend(msg);
+        } catch {
+            setNewMessage(msg);
+        }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+        }
+    };
+
+    return (
+        <div className="px-6 py-4 border-t border-gray-100 bg-white shrink-0">
+            <div className="flex gap-3 items-end bg-gray-50 rounded-2xl border border-gray-200 px-4 py-3 focus-within:border-orange-300 transition-colors">
+                <button
+                    type="button"
+                    className="shrink-0 self-center text-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label="Attach file"
+                >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                    </svg>
+                </button>
+                <textarea
+                    ref={textareaRef}
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Type a message…"
+                    rows={1}
+                    className="flex-1 bg-transparent py-1 text-[15px] text-gray-900 placeholder-gray-400 focus:outline-none resize-none leading-6 max-h-36 overflow-y-auto"
+                />
+                <button
+                    type="button"
+                    onClick={handleSend}
+                    disabled={disabled || !newMessage.trim()}
+                    className="shrink-0 self-end w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                    aria-label="Send"
+                >
+                    <svg className="w-5 h-5 rotate-90" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                    </svg>
+                </button>
+            </div>
+            {error && <p className="text-red-500 text-sm text-center mt-2">{error}</p>}
+        </div>
+    );
+}
 
 export default function ConversationPage() {
     const router = useRouter();
@@ -31,11 +104,12 @@ export default function ConversationPage() {
 
     const { setIsOnLogin } = useIsLogin();
     const { openListing } = useIsListing();
-    const removeConversation = useContext(RemoveConversationContext);
+    const removeArchivedConversation = useContext(RemoveArchivedConversationContext);
     const [finalizationError, setFinalizationError] = useState('');
     const [isBlocked, setIsBlocked] = useState(false);
     const [showCancel, setShowCancel] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
+    const [showDeleteArchive, setShowDeleteArchive] = useState(false);
 
     // Rating state
     const [selectedRating, setSelectedRating] = useState(0);
@@ -45,13 +119,14 @@ export default function ConversationPage() {
     const [showModalRating, setShowModalRating] = useState(true
     );
 
+    // Stable primitive — only changes when the conversation partner changes, not on every update
+    const otherUserId = conversation
+        ? (conversation.buyer === currentUserId ? conversation.seller : conversation.buyer)
+        : null;
+
     // Show "unavailable" page if the other user is blocked OR has blocked current user
     useEffect(() => {
-        if (!currentUserId || !conversation) return;
-
-        const otherUserId = conversation.buyer === currentUserId
-            ? conversation.seller
-            : conversation.buyer;
+        if (!currentUserId || !otherUserId) return;
 
         let cancelled = false;
 
@@ -67,19 +142,10 @@ export default function ConversationPage() {
         };
         checkBlocked();
         return () => { cancelled = true; };
-    }, [currentUserId, conversation]);
+    }, [currentUserId, otherUserId]);
 
-    const [newMessage, setNewMessage] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-    useEffect(() => {
-        if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-        }
-    }, [newMessage]);
 
     // scroll to bottom on initial load / new message
     const prevMessageCountRef = useRef(0);
@@ -144,8 +210,8 @@ export default function ConversationPage() {
 
 
     const isBuyer = conversation?.buyer === currentUserId;
-    const hasConfirmed = isBuyer ? conversation?.buyer_confirmed : conversation?.seller_confirmed;
     const otherUser = isBuyer ? conversation?.expand?.seller : conversation?.expand?.buyer;
+    // otherUserId already derived above
     const listing = conversation?.expand?.listing;
     const isArchived = isBuyer ? !!conversation?.buyer_archived : !!conversation?.seller_archived;
     const cachedListingTitle = conversation?.cached_listing_title as string | undefined;
@@ -158,7 +224,6 @@ export default function ConversationPage() {
         : cachedListingImageUrl ?? '';
     const listingPrice = listing?.price ?? cachedListingPrice ?? -1;
     const listingTitle = listing?.title ?? cachedListingTitle;
-    const offerPrice = conversation?.offerPrice ?? conversation?.initial_offer ?? null;
     const saleStatus = conversation?.saleConfirmed ? 'confirmed' : conversation?.saleCancelled ? 'cancelled' : null;
 
     //check if confimred convo was already rated by buyer, if so hide rating component
@@ -224,7 +289,7 @@ export default function ConversationPage() {
         } finally {
             setSubmittingRating(false);
         }
-    }, [conversation, currentUserId, isBuyer, selectedRating, router]);
+    }, [conversation, currentUserId, isBuyer, selectedRating]);
 
     const handleEndConversation = useCallback(async (): Promise<boolean> => {
        if(!conversationId) return false;
@@ -248,32 +313,7 @@ export default function ConversationPage() {
             setFinalizationError((err as Error)?.message || 'Failed to end conversation. Please try again.');
            return false;
        }
-   }, [conversationId, router, removeConversation]);
-
-    const handleTwoWayConfirm = useCallback(async (): Promise<boolean> => {
-        if(!conversationId) return false;
-        setFinalizationError('');
-
-        try{
-            const conversationOnline = await pb.collection('conversations').getOne(conversation?.id ? conversation.id : conversationId);
-
-            const buyerConfirmed = conversationOnline?.buyer_confirmed || isBuyer;
-            const sellerConfirmed = conversationOnline?.seller_confirmed || !isBuyer;
-            const saleConfirmed = buyerConfirmed && sellerConfirmed;
-            await pb.collection('conversations').update(conversationId, {
-                buyer_confirmed: buyerConfirmed,
-                seller_confirmed: sellerConfirmed,
-                saleConfirmed: saleConfirmed,
-                buyer_archived: false,
-                seller_archived: saleConfirmed,
-            });
-            return true;
-        } catch(err: unknown){
-            console.error("Error confirming sale:", err);
-            setFinalizationError((err as Error)?.message || 'Failed to confirm sale. Please try again.');
-            return false;
-        }
-    },[conversationId, isBuyer, router])
+   }, [conversationId, router, conversation]);
 
     const handleConfirm = useCallback(async (): Promise<boolean> => {
         if(!conversationId) return false;
@@ -293,7 +333,22 @@ export default function ConversationPage() {
             setFinalizationError((err as Error)?.message || 'Failed to confirm sale. Please try again.');
             return false;
         }
-    },[conversationId, isBuyer, router])
+    },[conversationId])
+
+    const handleDeleteArchive = useCallback(async (): Promise<boolean> => {
+        if (!conversationId) return false;
+        try {
+            await pb.collection('conversations').update(conversationId, {
+                [isBuyer ? 'buyer_deleted' : 'seller_deleted']: true,
+            });
+            removeArchivedConversation(conversationId);
+            router.push('/messages');
+            return true;
+        } catch (err: unknown) {
+            console.error('Error deleting archive:', err);
+            return false;
+        }
+    }, [conversationId, isBuyer, router, removeArchivedConversation]);
 
     if (!currentUserId) {
         return (
@@ -333,24 +388,6 @@ export default function ConversationPage() {
             </div>
         );
     }
-
-    const handleSend = async () => {
-        if (!newMessage.trim()) return;
-        const msg = newMessage;
-        setNewMessage('');
-        try {
-            await sendMessage(msg);
-        } catch {
-            setNewMessage(msg);
-        }
-    };
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSend();
-        }
-    };
 
     return (
         <div className="flex-1 flex flex-col overflow-hidden bg-white min-w-0">
@@ -472,17 +509,38 @@ export default function ConversationPage() {
                             )}
                         </div>
                     )}
-                    <button
-                        type="button"
-                        className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-                        aria-label="More options"
-                    >
-                        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-                            <circle cx="12" cy="5" r="1.8" />
-                            <circle cx="12" cy="12" r="1.8" />
-                            <circle cx="12" cy="19" r="1.8" />
-                        </svg>
-                    </button>
+                    {isArchived && (
+                        showDeleteArchive ? (
+                            <>
+                                <span className="text-xs text-gray-400 mr-1">Delete this archive?</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowDeleteArchive(false)}
+                                    className="px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-500 hover:bg-gray-100 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        const ok = await handleDeleteArchive();
+                                        if (ok) setShowDeleteArchive(false);
+                                    }}
+                                    className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors"
+                                >
+                                    Delete
+                                </button>
+                            </>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => setShowDeleteArchive(true)}
+                                className="px-4 py-2 rounded-xl border border-red-200 text-sm font-semibold text-red-500 hover:bg-red-50 hover:border-red-300 transition-colors"
+                            >
+                                Delete Archive
+                            </button>
+                        )
+                    )}
                 </div>
             </div>
 
@@ -490,42 +548,6 @@ export default function ConversationPage() {
             {finalizationError && !saleStatus && (
                 <div className="shrink-0 px-6 py-2.5 bg-red-50 border-b border-red-100">
                     <p className="text-sm text-red-600">{finalizationError}</p>
-                </div>
-            )}
-
-            {/* ── Sale status banner ── */}
-            {saleStatus && (
-                <div className={`px-6 py-3.5 border-b shrink-0 flex items-center justify-between gap-3 ${
-                    saleStatus === 'confirmed'
-                        ? 'bg-emerald-50 border-emerald-100'
-                        : 'bg-red-50 border-red-100'
-                }`}>
-                    <div className="flex items-center gap-3 flex-wrap">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold ${
-                            saleStatus === 'confirmed'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : 'bg-red-100 text-red-800'
-                        }`}>
-                            {saleStatus === 'confirmed' ? '✓ Sale confirmed' : '✕ Sale cancelled'}
-                        </span>
-                        <p className="text-sm text-gray-500">
-                            {saleStatus === 'confirmed'
-                                ? 'The listing has been marked unavailable.'
-                                : 'This sale has been cancelled by the seller.'}
-                        </p>
-                    </div>
-                    {saleStatus === 'cancelled' && (
-                        <button
-                            type="button"
-                            onClick={handleEndConversation}
-                            className="shrink-0 text-sm font-medium text-red-600 hover:text-red-800 transition-colors"
-                        >
-                            End Conversation
-                        </button>
-                    )}
-                    {finalizationError && (
-                        <p className="text-red-500 text-sm">{finalizationError}</p>
-                    )}
                 </div>
             )}
 
@@ -616,6 +638,33 @@ export default function ConversationPage() {
                     })}
 
                     <div ref={messagesEndRef} />
+
+                    {/* ── In-chat sale status event ── */}
+                    {saleStatus && (
+                        <div className="flex justify-center my-4">
+                            <div className={`flex items-center gap-2.5 px-5 py-2.5 rounded-2xl text-sm font-semibold shadow-sm ${
+                                saleStatus === 'confirmed'
+                                    ? 'bg-emerald-100 text-emerald-700'
+                                    : 'bg-red-100 text-red-600'
+                            }`}>
+                                {saleStatus === 'confirmed' ? (
+                                    <>
+                                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        Sale confirmed
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        Sale cancelled
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -639,40 +688,7 @@ export default function ConversationPage() {
                     </div>
                 </div>
             ) : (
-                <div className="px-6 py-4 border-t border-gray-100 bg-white shrink-0">
-                    <div className="flex gap-3 items-end bg-gray-50 rounded-2xl border border-gray-200 px-4 py-3 focus-within:border-orange-300 transition-colors">
-                        <button
-                            type="button"
-                            className="shrink-0 self-center text-gray-400 hover:text-gray-600 transition-colors"
-                            aria-label="Attach file"
-                        >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                            </svg>
-                        </button>
-                        <textarea
-                            ref={textareaRef}
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder="Type a message…"
-                            rows={1}
-                            className="flex-1 bg-transparent py-1 text-[15px] text-gray-900 placeholder-gray-400 focus:outline-none resize-none leading-6 max-h-36 overflow-y-auto"
-                        />
-                        <button
-                            type="button"
-                            onClick={handleSend}
-                            disabled={sending || !newMessage.trim()}
-                            className="shrink-0 self-end w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
-                            aria-label="Send"
-                        >
-                            <svg className="w-5 h-5 rotate-90" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                            </svg>
-                        </button>
-                    </div>
-                    {error && <p className="text-red-500 text-sm text-center mt-2">{error}</p>}
-                </div>
+                <MessageInput onSend={sendMessage} disabled={sending} error={error ?? undefined} />
             )}
         </div>
     );

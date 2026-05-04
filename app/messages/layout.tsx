@@ -9,7 +9,7 @@ import Link from 'next/link';
 import {Suspense, useEffect, useRef, useState} from 'react';
 import {usePathname, useRouter} from 'next/navigation';
 import {Search} from 'lucide-react';
-import {RemoveConversationContext as RemoveConversationContext1} from "@/app/messages/removeConversationContext";
+import {RemoveConversationContext as RemoveConversationContext1, RemoveArchivedConversationContext} from "@/app/messages/removeConversationContext";
 
 type Tab = 'inbox' | 'dm' | 'archived';
 
@@ -23,7 +23,7 @@ function MessagesShell({ children }: { children: React.ReactNode }) {
 
     const currentUserId = useCurrentUser();
     const { conversations, loading, removeConversation } = useConversations(currentUserId);
-    const { conversations: archivedConversations, loading: archivedLoading } = useConversations(
+    const { conversations: archivedConversations, loading: archivedLoading, removeConversation: removeArchivedConversation } = useConversations(
         archivedEverOpened ? currentUserId : null,
         true
     );
@@ -157,6 +157,7 @@ function MessagesShell({ children }: { children: React.ReactNode }) {
 
     return (
         <RemoveConversationContext1 value={removeConversation}>
+        <RemoveArchivedConversationContext value={removeArchivedConversation}>
         <div className="flex overflow-hidden bg-gray-50" style={{ height: 'calc(100vh - 73px)' }}>
             {/* ── Conversation list panel ── */}
             <div className="w-105 shrink-0 flex flex-col border-r border-gray-200 bg-white">
@@ -387,6 +388,7 @@ function MessagesShell({ children }: { children: React.ReactNode }) {
             {/* ── Right panel (page content) ── */}
             <div className="flex-1 flex flex-col overflow-hidden min-w-0">{children}</div>
         </div>
+        </RemoveArchivedConversationContext>
         </RemoveConversationContext1>
     );
 }
